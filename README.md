@@ -4,6 +4,10 @@ RockBoots ist ein Paper-Minecraft-Plugin fuer 1.20.x, das ein spezielles Paar St
 
 Im Kern ermoeglichen die Rock Boots kontrolliertes Schweben in der Luft. Die Flugzeit ist begrenzt und wird als Energie gespeichert. Zusaetzlich koennen die Stiefel mit passenden Stiefeln und verzauberten Buechern erweitert werden. Je nach Upgrade wird das Fliegen schneller, sicherer oder vielseitiger.
 
+## Kurzfassung
+
+RockBoots ist ein movement-orientiertes Item-Plugin fuer Paper, das aus einem einfachen Paar Stiefel ein ausbaubares Flugwerkzeug macht. Spieler craften die Boots aus Cobblestone, laden sie mit Erfahrung auf und verbessern sie ueber ein eingebautes Upgrade-Menue mit passenden Enchantment-Buechern. Dadurch entstehen kontrolliertes Schweben, ein Glasteppich in der Luft, Gleitphasen bei Energieende und mehr Geschwindigkeit beim Fliegen.
+
 ## Was das Plugin macht
 
 Die Rock Boots fuegen ein craftbares Spezial-Item hinzu, das:
@@ -225,7 +229,3 @@ Die Anzeige unterscheidet zwischen aktivem und inaktivem Zustand, damit man sofo
 - Das Plugin ist fuer Paper `1.20.x` ausgelegt.
 - Es gibt aktuell keine eigenen Commands.
 - Es gibt aktuell keine konfigurierbare Config-Datei.
-
-## Kurzfassung
-
-RockBoots ist ein movement-orientiertes Item-Plugin fuer Paper, das aus einem einfachen Paar Stiefel ein ausbaubares Flugwerkzeug macht. Spieler craften die Boots aus Cobblestone, laden sie mit Erfahrung auf und verbessern sie ueber ein eingebautes Upgrade-Menue mit passenden Enchantment-Buechern. Dadurch entstehen kontrolliertes Schweben, ein Glasteppich in der Luft, Gleitphasen bei Energieende und mehr Geschwindigkeit beim Fliegen.
