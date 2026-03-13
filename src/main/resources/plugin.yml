@@ -1,0 +1,5 @@
+name: rock_boots
+version: 1.0.0
+main: de.mcbesser.rockboots.RockBootsPlugin
+api-version: '1.20'
+authors: [McB_sser]
