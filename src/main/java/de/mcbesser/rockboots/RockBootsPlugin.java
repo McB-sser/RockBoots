@@ -20,7 +20,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -107,7 +106,6 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
     private final Map<UUID, Integer> lastWarnedSecond = new HashMap<>();
     private final Map<UUID, Long> actionBarPauseUntil = new HashMap<>();
     private final Map<UUID, Boolean> lastDisplayState = new HashMap<>();
-    private final Map<UUID, Double> trackedFallPeakY = new HashMap<>();
     private final Set<UUID> manuallyDisabledFlight = new HashSet<>();
 
     @Override
@@ -216,7 +214,6 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         lastWarnedSecond.remove(uuid);
         actionBarPauseUntil.remove(uuid);
         lastDisplayState.remove(uuid);
-        trackedFallPeakY.remove(uuid);
         manuallyDisabledFlight.remove(uuid);
     }
 
@@ -276,16 +273,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
 
         if (event.isFlying()) {
             manuallyDisabledFlight.remove(player.getUniqueId());
-            trackedFallPeakY.remove(player.getUniqueId());
         }
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onFallDamage(EntityDamageEvent event) {
-        if (!(event.getEntity() instanceof Player player) || event.getCause() != EntityDamageEvent.DamageCause.FALL) {
-            return;
-        }
-        trackedFallPeakY.remove(player.getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -949,7 +937,6 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
                 lastWarnedSecond.remove(uuid);
                 manuallyDisabledFlight.remove(uuid);
                 lastDisplayState.remove(uuid);
-                trackedFallPeakY.remove(uuid);
                 continue;
             }
 
@@ -999,45 +986,11 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
                 player.setFlySpeed(speed);
             }
 
-            trackInactiveFall(player, boots, energy);
             handleHover(player, boots);
             announceDisplayStateIfChanged(player, boots);
             showEnergyBar(player, boots);
             playWarningIfNeeded(player, boots);
         }
-    }
-
-    private void trackInactiveFall(Player player, ItemStack boots, int energy) {
-        UUID uuid = player.getUniqueId();
-        if (player.isOnGround()) {
-            applyTrackedFallDamage(player, uuid);
-            return;
-        }
-        if (player.isSwimming() || player.isInsideVehicle() || player.isGliding() || energy <= 0 || isDisplayActive(player, boots)) {
-            trackedFallPeakY.remove(uuid);
-            return;
-        }
-
-        double y = player.getLocation().getY();
-        trackedFallPeakY.merge(uuid, y, Math::max);
-    }
-
-    private void applyTrackedFallDamage(Player player, UUID uuid) {
-        Double peakY = trackedFallPeakY.remove(uuid);
-        if (peakY == null) {
-            return;
-        }
-
-        double drop = peakY - player.getLocation().getY();
-        double damage = drop - 3.0;
-        if (damage <= 0.0) {
-            return;
-        }
-        if (player.getFallDistance() > 0.0f) {
-            return;
-        }
-
-        player.damage(damage);
     }
 
     private void announceDisplayStateIfChanged(Player player, ItemStack boots) {
