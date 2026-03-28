@@ -56,6 +56,9 @@ import java.util.UUID;
 import java.util.Base64;
 
 public final class RockBootsPlugin extends JavaPlugin implements Listener {
+    private static final String MINUTE_BAR_SEGMENT = "#";
+    private static final Material BOOTS_SLOT_PLACEHOLDER_MATERIAL = Material.LIME_STAINED_GLASS_PANE;
+    private static final Material UPGRADE_SLOT_PLACEHOLDER_MATERIAL = Material.PURPLE_STAINED_GLASS_PANE;
     private static final String GUI_TITLE = ChatColor.DARK_GRAY + "Rock Boots Upgrade";
     private static final int GUI_SLOT_TYPE_BOOTS = 10;
     private static final int GUI_SLOT_TARGET_BOOTS = 13;
@@ -346,7 +349,8 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
 
     private boolean isPlaceholder(ItemStack item) {
         return item != null
-                && item.getType() == Material.GREEN_STAINED_GLASS_PANE
+                && (item.getType() == BOOTS_SLOT_PLACEHOLDER_MATERIAL
+                || item.getType() == UPGRADE_SLOT_PLACEHOLDER_MATERIAL)
                 && item.hasItemMeta();
     }
 
@@ -525,42 +529,42 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
 
     private ItemStack buildSlotPlaceholder(int slot) {
         if (slot == GUI_SLOT_TYPE_BOOTS) {
-            return describedPane(Material.GREEN_STAINED_GLASS_PANE, ChatColor.GREEN + "Stiefel", List.of(
+            return describedPane(BOOTS_SLOT_PLACEHOLDER_MATERIAL, ChatColor.GREEN + "Stiefel", List.of(
                     ChatColor.GRAY + "Lege Stiefel ein, um den Typ",
                     ChatColor.GRAY + "der Rock Boots zu aendern.",
                     ChatColor.DARK_GRAY + "Eigene Verzauberungen werden uebernommen."
             ));
         }
         if (slot == GUI_SLOT_TARGET_BOOTS) {
-            return describedPane(Material.GREEN_STAINED_GLASS_PANE, ChatColor.GREEN + "Rock Boots (Basis)", List.of(
+            return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Rock Boots (Basis)", List.of(
                     ChatColor.GRAY + "Vorschau deiner Rock Boots.",
                     ChatColor.GRAY + "Dieser Slot ist nicht direkt aenderbar."
             ));
         }
         if (slot == GUI_SLOT_BOOK_UNBREAKING) {
-            return describedPane(Material.GREEN_STAINED_GLASS_PANE, ChatColor.GREEN + "Haltbarkeit", List.of(
+            return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Haltbarkeit", List.of(
                     ChatColor.GRAY + "Mehr maximale Flugzeit.",
                     ChatColor.DARK_GRAY + "Nur Custom-Effekt, keine echte Verzauberung."
             ));
         }
         if (slot == GUI_SLOT_BOOK_FROST) {
-            return describedPane(Material.GREEN_STAINED_GLASS_PANE, ChatColor.GREEN + "Eisläufer", List.of(
+            return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Eislaeufer", List.of(
                     ChatColor.GRAY + "Aktiviert den Glasteppich",
                     ChatColor.GRAY + "unter deinen Fuessen."
             ));
         }
         if (slot == GUI_SLOT_BOOK_EFFICIENCY) {
-            return describedPane(Material.GREEN_STAINED_GLASS_PANE, ChatColor.GREEN + "Effizienz", List.of(
+            return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Effizienz", List.of(
                     ChatColor.GRAY + "Erhoeht die Fluggeschwindigkeit."
             ));
         }
         if (slot == GUI_SLOT_BOOK_FEATHER) {
-            return describedPane(Material.GREEN_STAINED_GLASS_PANE, ChatColor.GREEN + "Federfall", List.of(
+            return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Federfall", List.of(
                     ChatColor.GRAY + "Laesst dich nach Energieende",
                     ChatColor.GRAY + "noch einige Bloecke schweben."
             ));
         }
-        return describedPane(Material.GREEN_STAINED_GLASS_PANE, ChatColor.GREEN + "Seelentempo", List.of(
+        return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Seelentempo", List.of(
                 ChatColor.GRAY + "Mehr Speed beim Sprinten",
                 ChatColor.GRAY + "waehrend des Fluges."
         ));
@@ -1075,8 +1079,8 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
 
         String minuteBar = "";
         if (minuteReserveMax > 0) {
-            minuteBar = ChatColor.AQUA + "■".repeat(minuteReserveNow)
-                    + ChatColor.DARK_GRAY + "■".repeat(Math.max(0, minuteReserveMax - minuteReserveNow))
+            minuteBar = ChatColor.AQUA + MINUTE_BAR_SEGMENT.repeat(minuteReserveNow)
+                    + ChatColor.DARK_GRAY + MINUTE_BAR_SEGMENT.repeat(Math.max(0, minuteReserveMax - minuteReserveNow))
                     + ChatColor.GRAY + " ";
         }
         String secondBar = energyColor + "|".repeat(secondFilled) + ChatColor.DARK_GRAY + "|".repeat(secondBars - secondFilled);
@@ -1134,8 +1138,8 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
 
         String minuteBar = "";
         if (minuteReserveMax > 0) {
-            minuteBar = ChatColor.AQUA + "â– ".repeat(minuteReserveNow)
-                    + ChatColor.DARK_GRAY + "â– ".repeat(Math.max(0, minuteReserveMax - minuteReserveNow))
+            minuteBar = ChatColor.AQUA + MINUTE_BAR_SEGMENT.repeat(minuteReserveNow)
+                    + ChatColor.DARK_GRAY + MINUTE_BAR_SEGMENT.repeat(Math.max(0, minuteReserveMax - minuteReserveNow))
                     + ChatColor.GRAY + " ";
         }
         String secondBar = energyColor + "|".repeat(secondFilled) + ChatColor.DARK_GRAY + "|".repeat(secondBars - secondFilled);
