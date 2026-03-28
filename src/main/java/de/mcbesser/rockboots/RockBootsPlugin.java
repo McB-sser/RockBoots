@@ -56,7 +56,7 @@ import java.util.UUID;
 import java.util.Base64;
 
 public final class RockBootsPlugin extends JavaPlugin implements Listener {
-    private static final String MINUTE_BAR_SEGMENT = "#";
+    private static final String MINUTE_BAR_SEGMENT = "\u25A0";
     private static final Material BOOTS_SLOT_PLACEHOLDER_MATERIAL = Material.LIME_STAINED_GLASS_PANE;
     private static final Material UPGRADE_SLOT_PLACEHOLDER_MATERIAL = Material.PURPLE_STAINED_GLASS_PANE;
     private static final String GUI_TITLE = ChatColor.DARK_GRAY + "Rock Boots Upgrade";
