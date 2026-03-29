@@ -223,27 +223,41 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
     @EventHandler
     public void onExpGain(PlayerExpChangeEvent event) {
         Player player = event.getPlayer();
-        ItemStack boots = player.getInventory().getBoots();
-        if (!isRockBoots(boots)) {
+        int remainingXp = Math.max(0, event.getAmount());
+        if (remainingXp <= 0) {
             return;
+        }
+
+        remainingXp = chargeBootsFromExperience(player.getInventory().getBoots(), remainingXp);
+        remainingXp = chargeBootsFromExperience(player.getInventory().getItemInMainHand(), remainingXp);
+        remainingXp = chargeBootsFromExperience(player.getInventory().getItemInOffHand(), remainingXp);
+        event.setAmount(remainingXp);
+    }
+
+    private int chargeBootsFromExperience(ItemStack boots, int availableXp) {
+        if (availableXp <= 0 || !isRockBoots(boots)) {
+            return availableXp;
         }
 
         ItemMeta meta = boots.getItemMeta();
         if (meta == null) {
-            return;
+            return availableXp;
         }
+
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         int maxEnergy = Optional.ofNullable(pdc.get(keyMaxEnergy, PersistentDataType.INTEGER)).orElse(60);
         int energy = Optional.ofNullable(pdc.get(keyEnergy, PersistentDataType.INTEGER)).orElse(maxEnergy);
         if (energy >= maxEnergy) {
-            return;
+            return availableXp;
         }
 
-        int repaired = Math.max(1, event.getAmount()) * 2;
-        int updated = Math.min(maxEnergy, energy + repaired);
+        int missingEnergy = Math.max(0, maxEnergy - energy);
+        int consumedXp = Math.min(availableXp, Math.max(1, (missingEnergy + 1) / 2));
+        int updated = Math.min(maxEnergy, energy + (consumedXp * 2));
         pdc.set(keyEnergy, PersistentDataType.INTEGER, updated);
         refreshLore(meta, updated, maxEnergy);
         boots.setItemMeta(meta);
+        return availableXp - consumedXp;
     }
 
     private void unlockRecipe(Player player) {
