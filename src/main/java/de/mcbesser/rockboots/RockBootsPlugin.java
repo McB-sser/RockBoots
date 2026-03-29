@@ -1093,7 +1093,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
 
         String minuteBar = "";
         if (minuteReserveMax > 0) {
-            minuteBar = ChatColor.AQUA + MINUTE_BAR_SEGMENT.repeat(minuteReserveNow)
+            minuteBar = ChatColor.GREEN + MINUTE_BAR_SEGMENT.repeat(minuteReserveNow)
                     + ChatColor.DARK_GRAY + MINUTE_BAR_SEGMENT.repeat(Math.max(0, minuteReserveMax - minuteReserveNow))
                     + ChatColor.GRAY + " ";
         }
@@ -1152,7 +1152,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
 
         String minuteBar = "";
         if (minuteReserveMax > 0) {
-            minuteBar = ChatColor.AQUA + MINUTE_BAR_SEGMENT.repeat(minuteReserveNow)
+            minuteBar = ChatColor.GREEN + MINUTE_BAR_SEGMENT.repeat(minuteReserveNow)
                     + ChatColor.DARK_GRAY + MINUTE_BAR_SEGMENT.repeat(Math.max(0, minuteReserveMax - minuteReserveNow))
                     + ChatColor.GRAY + " ";
         }
