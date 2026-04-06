@@ -20,6 +20,8 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.PlayerItemBreakEvent;
+import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -328,6 +330,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         }
         ItemStack handItem = player.getInventory().getItemInMainHand();
         if (isRockBoots(handItem)) {
+            syncStoredTypeBootsDamage(handItem);
             ItemStack target = handItem.clone();
             target.setAmount(1);
             inv.setItem(GUI_SLOT_TARGET_BOOTS, target);
@@ -503,6 +506,98 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
             return 0;
         }
         return Math.max(meta.getEnchantLevel(enchantment), customUpgrade(meta, key));
+    }
+
+    private ItemStack storedTypeBoots(ItemMeta meta) {
+        if (meta == null) {
+            return null;
+        }
+        String data = meta.getPersistentDataContainer().get(keySlotTypeBoots, PersistentDataType.STRING);
+        ItemStack stored = deserializeItem(data);
+        if (stored == null || stored.getType() == Material.AIR || !stored.getType().name().endsWith("_BOOTS")) {
+            return null;
+        }
+        return stored;
+    }
+
+    private boolean hasStoredTypeBoots(ItemMeta meta) {
+        return storedTypeBoots(meta) != null;
+    }
+
+    private void applyDurabilityMode(ItemMeta meta, boolean usesVanillaDurability) {
+        if (meta == null) {
+            return;
+        }
+        meta.setUnbreakable(!usesVanillaDurability);
+        if (usesVanillaDurability) {
+            meta.removeItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+            return;
+        }
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+    }
+
+    private void syncStoredTypeBootsDamage(ItemStack rockBoots) {
+        if (!isRockBoots(rockBoots)) {
+            return;
+        }
+        ItemMeta meta = rockBoots.getItemMeta();
+        if (meta == null) {
+            return;
+        }
+        ItemStack stored = storedTypeBoots(meta);
+        if (stored == null) {
+            return;
+        }
+        ItemMeta storedMeta = stored.getItemMeta();
+        if (!(storedMeta instanceof Damageable storedDamageable)) {
+            return;
+        }
+        ItemMeta rockMeta = rockBoots.getItemMeta();
+        if (!(rockMeta instanceof Damageable rockDamageable)) {
+            return;
+        }
+        storedDamageable.setDamage(rockDamageable.getDamage());
+        stored.setItemMeta((ItemMeta) storedDamageable);
+        String serialized = serializeItem(stored);
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        if (serialized == null) {
+            pdc.remove(keySlotTypeBoots);
+        } else {
+            pdc.set(keySlotTypeBoots, PersistentDataType.STRING, serialized);
+        }
+        rockBoots.setItemMeta(meta);
+    }
+
+    private ItemStack createBrokenReplacement(ItemStack brokenBoots) {
+        ItemStack replacement = brokenBoots.clone();
+        replacement.setType(Material.LEATHER_BOOTS);
+
+        ItemMeta meta = replacement.getItemMeta();
+        if (!(meta instanceof LeatherArmorMeta leatherMeta)) {
+            return createRockBoots();
+        }
+
+        leatherMeta.setColor(Color.GRAY);
+        leatherMeta.setDisplayName(ChatColor.GRAY + "Rock Boots");
+        applyDurabilityMode(leatherMeta, false);
+        for (Enchantment enchantment : new HashSet<>(leatherMeta.getEnchants().keySet())) {
+            leatherMeta.removeEnchant(enchantment);
+        }
+
+        if (leatherMeta instanceof Damageable damageable) {
+            damageable.setDamage(1);
+        }
+
+        PersistentDataContainer pdc = leatherMeta.getPersistentDataContainer();
+        pdc.remove(keySlotTypeBoots);
+        refreshLore(
+                leatherMeta,
+                Optional.ofNullable(pdc.get(keyEnergy, PersistentDataType.INTEGER)).orElse(5),
+                Optional.ofNullable(pdc.get(keyMaxEnergy, PersistentDataType.INTEGER)).orElse(60)
+        );
+
+        replacement.setItemMeta(leatherMeta);
+        return replacement;
     }
 
     private ItemStack createSanitizedBaseBoots(ItemStack source) {
@@ -851,6 +946,9 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
                 for (Map.Entry<Enchantment, Integer> entry : typeMeta.getEnchants().entrySet()) {
                     meta.addEnchant(entry.getKey(), entry.getValue(), true);
                 }
+                if (meta instanceof Damageable previewDamageable && typeMeta instanceof Damageable typeDamageable) {
+                    previewDamageable.setDamage(typeDamageable.getDamage());
+                }
             }
         }
 
@@ -860,8 +958,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         int feather = bookLevelFromSlot(inv, GUI_SLOT_BOOK_FEATHER);
         int soul = bookLevelFromSlot(inv, GUI_SLOT_BOOK_SOUL);
 
-        meta.setUnbreakable(true);
-        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        applyDurabilityMode(meta, typeBoots != null && !isPlaceholder(typeBoots));
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(keyRockBoots, PersistentDataType.BYTE, (byte) 1);
         pdc.set(keyUpgradeUnbreaking, PersistentDataType.INTEGER, unbreaking);
@@ -1516,7 +1613,9 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
 
         int currentMax = Optional.ofNullable(pdc.get(keyMaxEnergy, PersistentDataType.INTEGER)).orElse(desiredMax);
         int currentEnergy = Optional.ofNullable(pdc.get(keyEnergy, PersistentDataType.INTEGER)).orElse(Math.min(5, desiredMax));
-        if (currentMax == desiredMax && currentEnergy <= desiredMax) {
+        boolean shouldUseVanillaDurability = hasStoredTypeBoots(meta);
+        boolean alreadyUsesVanillaDurability = !meta.isUnbreakable();
+        if (currentMax == desiredMax && currentEnergy <= desiredMax && shouldUseVanillaDurability == alreadyUsesVanillaDurability) {
             return;
         }
         int adjustedEnergy;
@@ -1527,8 +1626,68 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         }
         pdc.set(keyMaxEnergy, PersistentDataType.INTEGER, desiredMax);
         pdc.set(keyEnergy, PersistentDataType.INTEGER, adjustedEnergy);
+        applyDurabilityMode(meta, shouldUseVanillaDurability);
         refreshLore(meta, adjustedEnergy, desiredMax);
         boots.setItemMeta(meta);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRockBootsDamage(PlayerItemDamageEvent event) {
+        ItemStack item = event.getItem();
+        if (!isRockBoots(item)) {
+            return;
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return;
+        }
+
+        if (!hasStoredTypeBoots(meta)) {
+            event.setCancelled(true);
+            applyDurabilityMode(meta, false);
+            item.setItemMeta(meta);
+            return;
+        }
+
+        if (!(meta instanceof Damageable damageable)) {
+            return;
+        }
+
+        ItemStack stored = storedTypeBoots(meta);
+        if (stored == null) {
+            return;
+        }
+        ItemMeta storedMeta = stored.getItemMeta();
+        if (!(storedMeta instanceof Damageable storedDamageable)) {
+            return;
+        }
+
+        storedDamageable.setDamage(damageable.getDamage() + event.getDamage());
+        stored.setItemMeta((ItemMeta) storedDamageable);
+        String serialized = serializeItem(stored);
+        if (serialized == null) {
+            meta.getPersistentDataContainer().remove(keySlotTypeBoots);
+        } else {
+            meta.getPersistentDataContainer().set(keySlotTypeBoots, PersistentDataType.STRING, serialized);
+        }
+        item.setItemMeta(meta);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onRockBootsBreak(PlayerItemBreakEvent event) {
+        ItemStack broken = event.getBrokenItem();
+        if (!isRockBoots(broken)) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+        ItemStack replacement = createBrokenReplacement(broken);
+        Bukkit.getScheduler().runTask(this, () -> {
+            player.getInventory().setBoots(replacement);
+            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
+            player.updateInventory();
+        });
     }
 }
 
