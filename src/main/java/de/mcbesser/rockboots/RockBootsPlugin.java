@@ -20,7 +20,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.player.PlayerItemBreakEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -51,6 +50,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
@@ -86,6 +86,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
     private NamespacedKey keyEnergy;
     private NamespacedKey keyMaxEnergy;
     private NamespacedKey keySlotTypeBoots;
+    private NamespacedKey keySlotTypeBootsDisabled;
     private NamespacedKey keySlotBookUnbreaking;
     private NamespacedKey keySlotBookFrost;
     private NamespacedKey keySlotBookEfficiency;
@@ -120,6 +121,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         keyEnergy = new NamespacedKey(this, "energy");
         keyMaxEnergy = new NamespacedKey(this, "max_energy");
         keySlotTypeBoots = new NamespacedKey(this, "slot_type_boots");
+        keySlotTypeBootsDisabled = new NamespacedKey(this, "slot_type_boots_disabled");
         keySlotBookUnbreaking = new NamespacedKey(this, "slot_book_unbreaking");
         keySlotBookFrost = new NamespacedKey(this, "slot_book_frost");
         keySlotBookEfficiency = new NamespacedKey(this, "slot_book_efficiency");
@@ -482,12 +484,25 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
             ItemStack stack = inv.getItem(slot);
             if (isEmptyOrPlaceholder(stack)) {
                 pdc.remove(key);
+                if (slot == GUI_SLOT_TYPE_BOOTS) {
+                    pdc.remove(keySlotTypeBootsDisabled);
+                }
                 continue;
             }
             String data = serializeItem(stack);
             if (data == null) {
                 pdc.remove(key);
+                if (slot == GUI_SLOT_TYPE_BOOTS) {
+                    pdc.remove(keySlotTypeBootsDisabled);
+                }
             } else {
+                if (slot == GUI_SLOT_TYPE_BOOTS) {
+                    ItemStack existingStored = storedTypeBoots(meta);
+                    String existingData = serializeItem(existingStored);
+                    if (!Objects.equals(existingData, data)) {
+                        pdc.remove(keySlotTypeBootsDisabled);
+                    }
+                }
                 pdc.set(key, PersistentDataType.STRING, data);
             }
         }
@@ -524,6 +539,30 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         return storedTypeBoots(meta) != null;
     }
 
+    private boolean isStoredTypeBootsDisabled(ItemMeta meta) {
+        if (meta == null) {
+            return false;
+        }
+        Byte disabled = meta.getPersistentDataContainer().get(keySlotTypeBootsDisabled, PersistentDataType.BYTE);
+        return disabled != null && disabled == (byte) 1;
+    }
+
+    private boolean hasActiveStoredTypeBoots(ItemMeta meta) {
+        return hasStoredTypeBoots(meta) && !isStoredTypeBootsDisabled(meta);
+    }
+
+    private void setStoredTypeBootsDisabled(ItemMeta meta, boolean disabled) {
+        if (meta == null) {
+            return;
+        }
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        if (disabled) {
+            pdc.set(keySlotTypeBootsDisabled, PersistentDataType.BYTE, (byte) 1);
+            return;
+        }
+        pdc.remove(keySlotTypeBootsDisabled);
+    }
+
     private void applyDurabilityMode(ItemMeta meta, boolean usesVanillaDurability) {
         if (meta == null) {
             return;
@@ -541,7 +580,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
             return;
         }
         ItemMeta meta = rockBoots.getItemMeta();
-        if (meta == null) {
+        if (meta == null || isStoredTypeBootsDisabled(meta)) {
             return;
         }
         ItemStack stored = storedTypeBoots(meta);
@@ -568,36 +607,33 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         rockBoots.setItemMeta(meta);
     }
 
-    private ItemStack createBrokenReplacement(ItemStack brokenBoots) {
-        ItemStack replacement = brokenBoots.clone();
-        replacement.setType(Material.LEATHER_BOOTS);
-
-        ItemMeta meta = replacement.getItemMeta();
-        if (!(meta instanceof LeatherArmorMeta leatherMeta)) {
-            return createRockBoots();
+    private void applyStandardRockBootsAppearance(ItemStack boots, ItemMeta sourceMeta) {
+        if (boots == null || sourceMeta == null) {
+            return;
         }
 
+        boots.setType(Material.LEATHER_BOOTS);
+        ItemMeta rawMeta = boots.getItemMeta();
+        if (!(rawMeta instanceof LeatherArmorMeta leatherMeta)) {
+            return;
+        }
+
+        sourceMeta.getPersistentDataContainer().copyTo(leatherMeta.getPersistentDataContainer(), true);
         leatherMeta.setColor(Color.GRAY);
         leatherMeta.setDisplayName(ChatColor.GRAY + "Rock Boots");
         applyDurabilityMode(leatherMeta, false);
         for (Enchantment enchantment : new HashSet<>(leatherMeta.getEnchants().keySet())) {
             leatherMeta.removeEnchant(enchantment);
         }
-
         if (leatherMeta instanceof Damageable damageable) {
             damageable.setDamage(1);
         }
 
         PersistentDataContainer pdc = leatherMeta.getPersistentDataContainer();
-        pdc.remove(keySlotTypeBoots);
-        refreshLore(
-                leatherMeta,
-                Optional.ofNullable(pdc.get(keyEnergy, PersistentDataType.INTEGER)).orElse(5),
-                Optional.ofNullable(pdc.get(keyMaxEnergy, PersistentDataType.INTEGER)).orElse(60)
-        );
-
-        replacement.setItemMeta(leatherMeta);
-        return replacement;
+        int energy = Optional.ofNullable(pdc.get(keyEnergy, PersistentDataType.INTEGER)).orElse(5);
+        int maxEnergy = Optional.ofNullable(pdc.get(keyMaxEnergy, PersistentDataType.INTEGER)).orElse(60);
+        refreshLore(leatherMeta, energy, maxEnergy);
+        boots.setItemMeta(leatherMeta);
     }
 
     private ItemStack createSanitizedBaseBoots(ItemStack source) {
@@ -930,8 +966,19 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         ItemStack preview = base.clone();
 
         ItemStack typeBoots = inv.getItem(GUI_SLOT_TYPE_BOOTS);
+        ItemMeta targetMeta = target.getItemMeta();
+        ItemStack storedBoots = storedTypeBoots(targetMeta);
+        boolean typeBootsDisabled = isStoredTypeBootsDisabled(targetMeta);
+        boolean sameAsStoredTypeBoots = typeBoots != null
+                && storedBoots != null
+                && Objects.equals(serializeItem(storedBoots), serializeItem(typeBoots));
+        boolean useTypeBoots = typeBoots != null
+                && !isPlaceholder(typeBoots)
+                && (!typeBootsDisabled || !sameAsStoredTypeBoots);
         if (typeBoots != null && !isPlaceholder(typeBoots) && typeBoots.getType().name().endsWith("_BOOTS")) {
-            preview.setType(typeBoots.getType());
+            if (useTypeBoots) {
+                preview.setType(typeBoots.getType());
+            }
         }
 
         ItemMeta meta = preview.getItemMeta();
@@ -940,7 +987,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        if (typeBoots != null && !isPlaceholder(typeBoots)) {
+        if (useTypeBoots) {
             ItemMeta typeMeta = typeBoots.getItemMeta();
             if (typeMeta != null) {
                 for (Map.Entry<Enchantment, Integer> entry : typeMeta.getEnchants().entrySet()) {
@@ -958,7 +1005,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         int feather = bookLevelFromSlot(inv, GUI_SLOT_BOOK_FEATHER);
         int soul = bookLevelFromSlot(inv, GUI_SLOT_BOOK_SOUL);
 
-        applyDurabilityMode(meta, typeBoots != null && !isPlaceholder(typeBoots));
+        applyDurabilityMode(meta, useTypeBoots);
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(keyRockBoots, PersistentDataType.BYTE, (byte) 1);
         pdc.set(keyUpgradeUnbreaking, PersistentDataType.INTEGER, unbreaking);
@@ -1613,7 +1660,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
 
         int currentMax = Optional.ofNullable(pdc.get(keyMaxEnergy, PersistentDataType.INTEGER)).orElse(desiredMax);
         int currentEnergy = Optional.ofNullable(pdc.get(keyEnergy, PersistentDataType.INTEGER)).orElse(Math.min(5, desiredMax));
-        boolean shouldUseVanillaDurability = hasStoredTypeBoots(meta);
+        boolean shouldUseVanillaDurability = hasActiveStoredTypeBoots(meta);
         boolean alreadyUsesVanillaDurability = !meta.isUnbreakable();
         if (currentMax == desiredMax && currentEnergy <= desiredMax && shouldUseVanillaDurability == alreadyUsesVanillaDurability) {
             return;
@@ -1643,7 +1690,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        if (!hasStoredTypeBoots(meta)) {
+        if (!hasActiveStoredTypeBoots(meta)) {
             event.setCancelled(true);
             applyDurabilityMode(meta, false);
             item.setItemMeta(meta);
@@ -1663,8 +1710,45 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        storedDamageable.setDamage(damageable.getDamage() + event.getDamage());
+        event.setCancelled(true);
+        int maxDurability = stored.getType().getMaxDurability();
+        int nextDamage = storedDamageable.getDamage() + event.getDamage();
+        if (maxDurability > 0 && nextDamage >= maxDurability) {
+            storedDamageable.setDamage(Math.max(0, maxDurability - 1));
+            stored.setItemMeta((ItemMeta) storedDamageable);
+
+            String serialized = serializeItem(stored);
+            if (serialized == null) {
+                meta.getPersistentDataContainer().remove(keySlotTypeBoots);
+            } else {
+                meta.getPersistentDataContainer().set(keySlotTypeBoots, PersistentDataType.STRING, serialized);
+            }
+            setStoredTypeBootsDisabled(meta, true);
+            item.setItemMeta(meta);
+            applyStandardRockBootsAppearance(item, meta);
+
+            Player player = event.getPlayer();
+            UUID uuid = player.getUniqueId();
+            player.setFlying(false);
+            if (!player.getGameMode().name().contains("CREATIVE")) {
+                player.setAllowFlight(false);
+            }
+            stopElytraSound(player);
+            clearCarpet(uuid);
+            jumpWindowTicks.remove(uuid);
+            carpetDescendCooldown.remove(uuid);
+            carpetAscendCooldown.remove(uuid);
+            featherGlideRemainingTicks.remove(uuid);
+            manuallyDisabledFlight.add(uuid);
+            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
+            sendPriorityActionBar(player, ChatColor.RED + "Rock Boots: Schuhtyp zerbrochen");
+            return;
+        }
+
+        storedDamageable.setDamage(nextDamage);
         stored.setItemMeta((ItemMeta) storedDamageable);
+        damageable.setDamage(nextDamage);
+        applyDurabilityMode(meta, true);
         String serialized = serializeItem(stored);
         if (serialized == null) {
             meta.getPersistentDataContainer().remove(keySlotTypeBoots);
@@ -1672,22 +1756,6 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
             meta.getPersistentDataContainer().set(keySlotTypeBoots, PersistentDataType.STRING, serialized);
         }
         item.setItemMeta(meta);
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onRockBootsBreak(PlayerItemBreakEvent event) {
-        ItemStack broken = event.getBrokenItem();
-        if (!isRockBoots(broken)) {
-            return;
-        }
-
-        Player player = event.getPlayer();
-        ItemStack replacement = createBrokenReplacement(broken);
-        Bukkit.getScheduler().runTask(this, () -> {
-            player.getInventory().setBoots(replacement);
-            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
-            player.updateInventory();
-        });
     }
 }
 
