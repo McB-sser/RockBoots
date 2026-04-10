@@ -1,4 +1,4 @@
-package de.mcbesser.rockboots;
+﻿package de.mcbesser.rockboots;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -676,14 +676,14 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         if (slot == GUI_SLOT_TYPE_BOOTS) {
             return describedPane(BOOTS_SLOT_PLACEHOLDER_MATERIAL, ChatColor.GREEN + "Stiefel", List.of(
                     ChatColor.GRAY + "Lege Stiefel ein, um den Typ",
-                    ChatColor.GRAY + "der Rock Boots zu aendern.",
-                    ChatColor.DARK_GRAY + "Eigene Verzauberungen werden uebernommen."
+                    ChatColor.GRAY + "der Rock Boots zu \u00e4ndern.",
+                    ChatColor.DARK_GRAY + "Eigene Verzauberungen werden \u00fcbernommen."
             ));
         }
         if (slot == GUI_SLOT_TARGET_BOOTS) {
             return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Rock Boots (Basis)", List.of(
                     ChatColor.GRAY + "Vorschau deiner Rock Boots.",
-                    ChatColor.GRAY + "Dieser Slot ist nicht direkt aenderbar."
+                    ChatColor.GRAY + "Dieser Slot ist nicht direkt \u00e4nderbar."
             ));
         }
         if (slot == GUI_SLOT_BOOK_UNBREAKING) {
@@ -693,25 +693,25 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
             ));
         }
         if (slot == GUI_SLOT_BOOK_FROST) {
-            return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Eislaeufer", List.of(
+            return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Eisl\u00e4ufer", List.of(
                     ChatColor.GRAY + "Aktiviert den Glasteppich",
-                    ChatColor.GRAY + "unter deinen Fuessen."
+                    ChatColor.GRAY + "unter deinen F\u00fcssen."
             ));
         }
         if (slot == GUI_SLOT_BOOK_EFFICIENCY) {
             return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Effizienz", List.of(
-                    ChatColor.GRAY + "Erhoeht die Fluggeschwindigkeit."
+                    ChatColor.GRAY + "Erh\u00f6ht die Fluggeschwindigkeit."
             ));
         }
         if (slot == GUI_SLOT_BOOK_FEATHER) {
             return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Federfall", List.of(
-                    ChatColor.GRAY + "Laesst dich nach Energieende",
-                    ChatColor.GRAY + "noch einige Bloecke schweben."
+                    ChatColor.GRAY + "L\u00e4sst dich nach Energieende",
+                    ChatColor.GRAY + "noch einige Bl\u00f6cke schweben."
             ));
         }
         return describedPane(UPGRADE_SLOT_PLACEHOLDER_MATERIAL, ChatColor.LIGHT_PURPLE + "Seelentempo", List.of(
                 ChatColor.GRAY + "Mehr Speed beim Sprinten",
-                ChatColor.GRAY + "waehrend des Fluges."
+                ChatColor.GRAY + "w\u00e4hrend des Fluges."
         ));
     }
 
