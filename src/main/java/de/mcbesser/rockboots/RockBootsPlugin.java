@@ -1,4 +1,4 @@
-﻿package de.mcbesser.rockboots;
+package de.mcbesser.rockboots;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
