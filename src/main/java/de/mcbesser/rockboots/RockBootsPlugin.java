@@ -158,7 +158,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         ItemStack result = createRockBoots();
         Bukkit.removeRecipe(recipeKey);
         ShapedRecipe recipe = new ShapedRecipe(recipeKey, result);
-        recipe.shape("C C", "C C", "   ");
+        recipe.shape("C C", "C C");
         recipe.setIngredient('C', Material.COBBLESTONE);
         recipe.setCategory(CraftingBookCategory.EQUIPMENT);
         Bukkit.addRecipe(recipe);
