@@ -276,7 +276,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         Player player = event.getPlayer();
         ItemStack boots = player.getInventory().getBoots();
 
-        if (!isRockBoots(boots) || player.getGameMode().name().contains("CREATIVE") || player.isGliding()) {
+        if (!isRockBoots(boots) || hasUnrestrictedFlightMode(player) || player.isGliding()) {
             return;
         }
 
@@ -421,6 +421,13 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
         } catch (IOException ignored) {
             return null;
         }
+    }
+
+    private boolean hasUnrestrictedFlightMode(Player player) {
+        return player != null && switch (player.getGameMode()) {
+            case CREATIVE, SPECTATOR -> true;
+            default -> false;
+        };
     }
 
     private ItemStack deserializeItem(String data) {
@@ -1090,7 +1097,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
             ItemStack boots = player.getInventory().getBoots();
             boolean active = isRockBoots(boots);
             if (!active) {
-                player.setAllowFlight(player.getGameMode().name().contains("CREATIVE"));
+                player.setAllowFlight(hasUnrestrictedFlightMode(player));
                 player.setFlySpeed(VANILLA_FLY_SPEED);
                 stopElytraSound(player);
                 clearCarpet(uuid);
@@ -1107,7 +1114,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
 
             int energy = getEnergy(boots);
             normalizeBootEnergyData(boots);
-            if (!player.getGameMode().name().contains("CREATIVE") && !player.isGliding()) {
+            if (!hasUnrestrictedFlightMode(player) && !player.isGliding()) {
                 if (player.isOnGround()) {
                     manuallyDisabledFlight.remove(uuid);
                 }
@@ -1733,7 +1740,7 @@ public final class RockBootsPlugin extends JavaPlugin implements Listener {
             Player player = event.getPlayer();
             UUID uuid = player.getUniqueId();
             player.setFlying(false);
-            if (!player.getGameMode().name().contains("CREATIVE")) {
+            if (!hasUnrestrictedFlightMode(player)) {
                 player.setAllowFlight(false);
             }
             stopElytraSound(player);
