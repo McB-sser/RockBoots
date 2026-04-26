@@ -60,13 +60,13 @@ Die Bedienung ist absichtlich einfach gehalten:
 
 - `Leertaste / Doppelsprung`: startet das Schweben bzw. den Flug
 - `In der Luft bleiben`: verbraucht Energie
-- `Shift auf festem Boden`: beendet den Flugmodus
-- `Shift + Rechtsklick mit Rock Boots in der Hand`: oeffnet das Upgrade-Menue
+- `Ducken auf festem Boden`: beendet den Flugmodus
+- `Ducken + Rechtsklick mit Rock Boots in der Hand`: oeffnet das Upgrade-Menue
 
 Wichtig:
 
-- Das Upgrade-Menue oeffnet sich nur, wenn du die Rock Boots in der Haupthand haeltst und dabei schleichst.
-- Ein normaler Rechtsklick ohne Sneaken soll das Vanilla-Verhalten nicht stoeren.
+- Das Upgrade-Menue oeffnet sich nur, wenn du die Rock Boots in der Haupthand haeltst und dabei duckst.
+- Ein normaler Rechtsklick ohne Ducken soll das Vanilla-Verhalten nicht stoeren.
 - Wenn keine Energie mehr vorhanden ist, endet der aktive Flug oder geht je nach Upgrade in einen Gleitmodus ueber.
 
 ## Energie-System
@@ -87,7 +87,7 @@ Die aktuelle Energie wird angezeigt:
 
 ## Upgrade-Menue
 
-Das Plugin besitzt ein eigenes Inventar-Menue mit Vorschau. Du oeffnest es mit `Shift + Rechtsklick`, waehrend du die Rock Boots in der Haupthand haeltst.
+Das Plugin besitzt ein eigenes Inventar-Menue mit Vorschau. Du oeffnest es mit `Ducken + Rechtsklick`, waehrend du die Rock Boots in der Haupthand haeltst.
 
 Im Menue gibt es feste Slots fuer:
 
